@@ -50,6 +50,10 @@ function a2xy (angle, radius) {
     return point;
 }
 
+function value2angle(value, delta, minimum) {
+    return delta * (value - minimum);
+}
+
 
 // Constructors and prototype methods
 //--------------------------------------------------------------------------------
@@ -130,7 +134,8 @@ Gauge.prototype.drawBezel = function() {
     return 0;
 }
 
-Gauge.prototype.drawNeedle = function(angle) {
+Gauge.prototype.drawNeedle = function(value) {
+    var angle = value2angle(value, this.deltaAngle, this.min);
     var needle = this.paper.path("M-9,-1L0,85L9,-1A9.1,9.1,0,0,0,-9,-1");
     this.fill(needle, this.darkGrey);
     needle.transform("r"+angle+" 0,0T"+this.gaugeCenter+","+this.gaugeCenter);
@@ -184,26 +189,25 @@ Gauge.prototype.drawScale = function() {
 
     var firstValue = findFirstMajorTick(this.min, this.max, majorInterval);
     var angle, deltaAngle = this.angleSpan / span;
+    this.deltaAngle = deltaAngle;
 
     var majorValue, minorValue, n;
 
-    this.scale = this.paper.set();
-
     for (majorValue = firstValue; majorValue <= this.max; majorValue += majorInterval) {	
-	angle = deltaAngle * (majorValue - this.min);
+	angle = value2angle(majorValue, deltaAngle, this.min);
 	this.drawMajorTick(angle, majorValue);
 	n = 0;
 	for (minorValue = majorValue + minorInterval; minorValue <= this.max; minorValue += minorInterval) {
 	    if (++n >= this.numMinorDivisions) {
 		break;
-	    }	    
-	    angle = deltaAngle * (minorValue - this.min);
+	    }	    	    
+	    angle = value2angle(minorValue, deltaAngle, this.min);
 	    this.drawMinorTick(angle);
 	}
     }
     if (firstValue > this.min) {
-	for (minorValue = firstValue - minorInterval; minorValue >= this.min; minorValue -= minorInterval) {
-	    angle = deltaAngle * (minorValue - this.min);
+	for (minorValue = firstValue - minorInterval; minorValue >= this.min; minorValue -= minorInterval) {	    
+	    angle = value2angle(minorValue, deltaAngle, this.min);
 	    this.drawMinorTick(angle);	    
 	}
     }
@@ -230,8 +234,7 @@ Gauge.prototype.drawScale = function() {
 Gauge.prototype.drawAll = function() {
     this.drawBezel();
     this.drawScale();
-    this.drawNeedle(125);
-    
+    this.drawNeedle(4.5);    
 }
 
 // Main Program Flow
