@@ -1,63 +1,5 @@
-function Unit(shortname, longname) {
-    this.shortname = shortname;
-    this.longname = longname;
-}
-
-function Point(x, y) {
-    this.x = x;
-    this.y = y;
-}
-
-function ClusterWidget() {
-    this.darkGrey = "#404040";
-    this.stopRed = "#BE3A39";
-    this.goGreen = "#2CB676";
-    this.numMinorDivisions = 5;
-}
-
-// fills with specified color, removes the default stroke 
-ClusterWidget.prototype.fill = function(element, color) {
-    element.attr("fill", color);
-    element.attr("stroke-width", 0);
-}
-
-function Gauge(name, unit, min, max, nom, nomMin, nomMax) {
-    this.name = name;
-    this.unit = unit;    
-    this.min = min;
-    if (max > min)
-	this.max = max;
-    else
-	console.log("Maximum value must be greater than minimum value"); //ERROR
-    if (typeof nom !== 'undefined') {
-	if (nom > min && nom < max)
-	    this.nominal = nom;
-	else
-	    console.log("Nominal value must be in between minimum and maximum values"); // ERROR
-    }
-    if (typeof nomMin !== 'undefined') {
-	if (nomMin > min && nomMin < max)
-	    this.nominalMin = nomMin;
-	else
-	    console.log("Nominal minimum value must be in between minimum and maximum values"); // ERROR
-    }	    
-    if (typeof nomMax !== 'undefined') {
-	if (nomMax > min && nomMax < max) {
-	    if (nomMax > nomMin)
-		this.nominalMax = nomMax;
-	    else
-		console.log("Nominal maximum value must be greater than nominal minimum value"); // ERROR
-	}
-	else
-	    console.log("Nominal maximum value must be in between minimum and maximum values"); // ERROR
-    }	    
-    this.angleSpan = 270; //what angle on the gauge face the scale should subtend, in degrees
-    this.gaugeCenter = 110;
-    this.paper = Raphael(document.getElementById("gauge0"), this.gaugeCenter * 2, this.gaugeCenter * 2);
-}
-
-Gauge.prototype = new ClusterWidget();
-
+// Ordinary Functions
+//--------------------------------------------------------------------------------
 
 // returns interval between major tick marks on the scale, depending on the total span s. 
 // Tries to make the numbers nice and round, labels may still need formatting with sprintf equivalent, though.
@@ -101,6 +43,78 @@ function d2r(angle) {
     return angle * Math.PI / 180;
 }
 
+function a2xy (angle, radius) {
+    var point = {};
+    point.x = -radius * Math.sin(d2r(angle));
+    point.y =  radius * Math.cos(d2r(angle));
+    return point;
+}
+
+
+// Constructors and prototype methods
+//--------------------------------------------------------------------------------
+
+function Unit(shortname, longname) {
+    this.shortname = shortname;
+    this.longname = longname;
+}
+
+function Point(x, y) {
+    this.x = x;
+    this.y = y;
+}
+
+function ClusterWidget() {}
+// properties in the prototype, getting around global variables with this
+ClusterWidget.prototype = {
+    darkGrey: "#404040",
+    stopRed: "#BE3A39",
+    goGreen: "#2CB676"
+}
+// fills with specified color, removes the default stroke 
+ClusterWidget.prototype.fill = function(element, color) {
+    element.attr("fill", color);
+    element.attr("stroke-width", 0);
+}
+
+function Gauge(name, unit, min, max, nom, nomMin, nomMax) {
+    this.name = name;
+    this.unit = unit;    
+    this.min = min;
+    if (max > min)
+	this.max = max;
+    else
+	console.log("Maximum value must be greater than minimum value"); //ERROR
+    if (typeof nom !== 'undefined') {
+	if (nom > min && nom < max)
+	    this.nominal = nom;
+	else
+	    console.log("Nominal value must be in between minimum and maximum values"); // ERROR
+    }
+    if (typeof nomMin !== 'undefined') {
+	if (nomMin > min && nomMin < max)
+	    this.nominalMin = nomMin;
+	else
+	    console.log("Nominal minimum value must be in between minimum and maximum values"); // ERROR
+    }	    
+    if (typeof nomMax !== 'undefined') {
+	if (nomMax > min && nomMax < max) {
+	    if (nomMax > nomMin)
+		this.nominalMax = nomMax;
+	    else
+		console.log("Nominal maximum value must be greater than nominal minimum value"); // ERROR
+	}
+	else
+	    console.log("Nominal maximum value must be in between minimum and maximum values"); // ERROR
+    }	    
+    this.paper = Raphael(document.getElementById("gauge0"), this.gaugeCenter * 2, this.gaugeCenter * 2);
+}
+// inherits from general ClusterWidget
+Gauge.prototype = new ClusterWidget();
+Gauge.prototype.numMinorDivisions = 5; //how many minor ticks in between major ticks?
+Gauge.prototype.angleSpan = 270; //what angle on the gauge face the scale should subtend, in degrees
+Gauge.prototype.gaugeCenter = 110; //size of gauge
+
 Gauge.prototype.styleTickText = function(el) {
     this.fill(el, this.darkGrey);
     el.attr("font-family", "Open Sans Condensed");
@@ -140,13 +154,6 @@ Gauge.prototype.drawMinorTick = function(angle) {
     return 0;
 }
 
-function a2xy (angle, radius) {
-    var point = {};
-    point.x = -radius * Math.sin(d2r(angle));
-    point.y =  radius * Math.cos(d2r(angle));
-    return point;
-}
-
 Gauge.prototype.drawTrack = function(startAngle, stopAngle, color) {
     var warnRadius = 96;
     var warnWidth = 3;
@@ -167,7 +174,6 @@ Gauge.prototype.drawTrack = function(startAngle, stopAngle, color) {
     return 0;
 }
 
- 
 // angle zero is straight downward, because that's how the gauges are
 // designed. Whole thing can be rotated later, as the nominal-tracking
 // feature does anyway.
@@ -180,6 +186,8 @@ Gauge.prototype.drawScale = function() {
     var angle, deltaAngle = this.angleSpan / span;
 
     var majorValue, minorValue, n;
+
+    this.scale = this.paper.set();
 
     for (majorValue = firstValue; majorValue <= this.max; majorValue += majorInterval) {	
 	angle = deltaAngle * (majorValue - this.min);
@@ -220,16 +228,15 @@ Gauge.prototype.drawScale = function() {
 }
 
 Gauge.prototype.drawAll = function() {
-    
     this.drawBezel();
     this.drawScale();
     this.drawNeedle(125);
-
+    
 }
 
+// Main Program Flow
+//--------------------------------------------------------------------------------
 $(function() {
-    var spans = [230, 200, 125, 100, 97, 74, 70, 51, 48, 35, 30, 25, 20, 0.7];
-
     $("#gauge0").draggable();
     
     var volts = new Unit("V", "volts");
