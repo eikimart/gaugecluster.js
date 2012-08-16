@@ -1,9 +1,3 @@
-//Global colors, probably not the right way to do this (themeability?)
-darkGrey = "#404040";
-stopRed = "#BE3A39";
-goGreen = "#2CB676";
-numMinorDivisions = 5;
-
 function Unit(shortname, longname) {
     this.shortname = shortname;
     this.longname = longname;
@@ -12,6 +6,19 @@ function Unit(shortname, longname) {
 function Point(x, y) {
     this.x = x;
     this.y = y;
+}
+
+function ClusterWidget() {
+    this.darkGrey = "#404040";
+    this.stopRed = "#BE3A39";
+    this.goGreen = "#2CB676";
+    this.numMinorDivisions = 5;
+}
+
+// fills with specified color, removes the default stroke 
+ClusterWidget.prototype.fill = function(element, color) {
+    element.attr("fill", color);
+    element.attr("stroke-width", 0);
 }
 
 function Gauge(name, unit, min, max, nom, nomMin, nomMax) {
@@ -49,8 +56,11 @@ function Gauge(name, unit, min, max, nom, nomMin, nomMax) {
     this.paper = Raphael(document.getElementById("gauge0"), this.gaugeCenter * 2, this.gaugeCenter * 2);
 }
 
-/* returns interval between major tick marks on the scale, depending on the total span s. 
-Tries to make the numbers nice and round, labels may still need formatting with sprintf equivalent, though. */
+Gauge.prototype = new ClusterWidget();
+
+
+// returns interval between major tick marks on the scale, depending on the total span s. 
+// Tries to make the numbers nice and round, labels may still need formatting with sprintf equivalent, though.
 function findInterval(s) {
     var n = 0, i, space;
     if (s >= 10) {
@@ -87,18 +97,12 @@ function findFirstMajorTick(min, max, interval) {
     return i;
 }
 
-/* fills with specified color, removes the default stroke */
-function fill(element, color) {
-    element.attr("fill", color);
-    element.attr("stroke-width", 0);
-}
-
 function d2r(angle) {
     return angle * Math.PI / 180;
 }
 
 Gauge.prototype.styleTickText = function(el) {
-    fill(el, darkGrey);
+    this.fill(el, this.darkGrey);
     el.attr("font-family", "Open Sans Condensed");
     el.attr("font-size", "18");
     el.attr("font-weight", "Light");
@@ -106,22 +110,22 @@ Gauge.prototype.styleTickText = function(el) {
 
 Gauge.prototype.drawBezel = function() {
     var bezel = this.paper.circle(this.gaugeCenter, this.gaugeCenter, this.gaugeCenter-2);
-    fill(bezel, "#f0f0f0");
+    this.fill(bezel, "#f0f0f0");
     var face = this.paper.circle(this.gaugeCenter, this.gaugeCenter, this.gaugeCenter-10);
-    fill(face, "#ffffff");
+    this.fill(face, "#ffffff");
     return 0;
 }
 
 Gauge.prototype.drawNeedle = function(angle) {
     var needle = this.paper.path("M-9,-1L0,85L9,-1A9.1,9.1,0,0,0,-9,-1");
-    fill(needle, darkGrey);
+    this.fill(needle, this.darkGrey);
     needle.transform("r"+angle+" 0,0T"+this.gaugeCenter+","+this.gaugeCenter);
     return 0;
 }
 
 Gauge.prototype.drawMajorTick = function(angle, value) {
     var majorTick = this.paper.rect(-1.5, -7.5, 3, 15);
-    fill(majorTick, darkGrey);
+    this.fill(majorTick, this.darkGrey);
     majorTick.transform("t0,85R"+angle+" 0,0T"+this.gaugeCenter+","+this.gaugeCenter);
     var majorText = this.paper.text(0, 0, value);
     this.styleTickText(majorText);
@@ -131,7 +135,7 @@ Gauge.prototype.drawMajorTick = function(angle, value) {
 
 Gauge.prototype.drawMinorTick = function(angle) {
     minorTick = this.paper.rect(-.75, -5, 1.5, 10);
-    fill(minorTick, darkGrey);
+    this.fill(minorTick, this.darkGrey);
     minorTick.transform("t0,87.5R"+angle+" 0,0T"+this.gaugeCenter+","+this.gaugeCenter);	   
     return 0;
 }
@@ -163,15 +167,14 @@ Gauge.prototype.drawTrack = function(startAngle, stopAngle, color) {
     return 0;
 }
 
-/* 
-angle zero is straight downward, because that's how the gauges are
-designed. Whole thing can be rotated later, as the nominal-tracking
-feature does anyway.
-*/
+ 
+// angle zero is straight downward, because that's how the gauges are
+// designed. Whole thing can be rotated later, as the nominal-tracking
+// feature does anyway.
 Gauge.prototype.drawScale = function() {
     var span = this.max - this.min;
     var majorInterval = findInterval(span);
-    var minorInterval = majorInterval / numMinorDivisions;
+    var minorInterval = majorInterval / this.numMinorDivisions;
 
     var firstValue = findFirstMajorTick(this.min, this.max, majorInterval);
     var angle, deltaAngle = this.angleSpan / span;
@@ -183,7 +186,7 @@ Gauge.prototype.drawScale = function() {
 	this.drawMajorTick(angle, majorValue);
 	n = 0;
 	for (minorValue = majorValue + minorInterval; minorValue <= this.max; minorValue += minorInterval) {
-	    if (++n >= numMinorDivisions) {
+	    if (++n >= this.numMinorDivisions) {
 		break;
 	    }	    
 	    angle = deltaAngle * (minorValue - this.min);
@@ -202,16 +205,16 @@ Gauge.prototype.drawScale = function() {
 	if (this.nominalMin < this.max && this.nominalMin > this.min) {
 	    nom = 1;
 	    stopAngle = deltaAngle * (this.nominalMin - this.min);
-	    this.drawTrack(0, stopAngle, stopRed);
+	    this.drawTrack(0, stopAngle, this.stopRed);
 	}
     }
     if ('nominalMax' in this) {
 	nom = 1;
 	startAngle = deltaAngle * (this.nominalMax - this.min);
-	this.drawTrack(startAngle, 270, stopRed);
+	this.drawTrack(startAngle, 270, this.stopRed);
     }
     if (nom) {
-	this.drawTrack(stopAngle, startAngle, goGreen);
+	this.drawTrack(stopAngle, startAngle, this.goGreen);
     }
     return 0;
 }
