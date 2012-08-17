@@ -239,19 +239,3 @@ Gauge.prototype.drawAll = function() {
     this.drawNeedle(0);    
 }
 
-// Main Program Flow
-//--------------------------------------------------------------------------------
-$(function() {
-    $("#gauge0").draggable();
-    
-    var volts = new Unit("V", "volts");
-    var voltage = new Gauge("Voltage", volts, 0, .07);
-
-    voltage.drawAll();
-    spans = [.01, .1, 1, 2, 3, 4, 5, 10, 12, 25, 50, 79, 100, 104, 156, 304, 1000, 10000];
-    var intval;
-    for (j = 0; j < spans.length; j++) {
-	console.log("span = " + spans[j]);
-	intval = findInterval(spans[j]);
-    }
-});
