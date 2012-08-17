@@ -22,10 +22,11 @@ function findInterval(s) {
 	    n++;
 	}
 	space = Math.round(s);
-	for (i=0; i<=1; i++) {
+	for (i=0; i<=n; i++) {
 	    space /= 10;
 	}
     }
+    console.log("n = "+n);
     return space;
 }
 
@@ -90,23 +91,23 @@ function Gauge(name, unit, min, max, nom, nomMin, nomMax) {
     else
 	console.log("Maximum value must be greater than minimum value"); //ERROR
     if (typeof nom !== 'undefined') {
-	if (nom > min && nom < max)
+	if (nom >= min && nom <= max)
 	    this.nominal = nom;
 	else
 	    console.log("Nominal value must be in between minimum and maximum values"); // ERROR
     }
     if (typeof nomMin !== 'undefined') {
-	if (nomMin > min && nomMin < max)
+	if (nomMin >= min && nomMin <= max)
 	    this.nominalMin = nomMin;
 	else
 	    console.log("Nominal minimum value must be in between minimum and maximum values"); // ERROR
     }	    
     if (typeof nomMax !== 'undefined') {
-	if (nomMax > min && nomMax < max) {
-	    if (nomMax > nomMin)
+	if (nomMax >= min && nomMax <= max) {
+	    if (nomMax >= nomMin)
 		this.nominalMax = nomMax;
 	    else
-		console.log("Nominal maximum value must be greater than nominal minimum value"); // ERROR
+		console.log("Nominal maximum value must be at least as great as the nominal minimum value"); // ERROR
 	}
 	else
 	    console.log("Nominal maximum value must be in between minimum and maximum values"); // ERROR
@@ -135,6 +136,8 @@ Gauge.prototype.drawBezel = function() {
 }
 
 Gauge.prototype.drawNeedle = function(value) {
+    if (value > this.max) value = this.max;
+    if (value < this.min) value = this.min;
     var angle = value2angle(value, this.deltaAngle, this.min);
     var needle = this.paper.path("M-9,-1L0,85L9,-1A9.1,9.1,0,0,0,-9,-1");
     this.fill(needle, this.darkGrey);
@@ -142,7 +145,7 @@ Gauge.prototype.drawNeedle = function(value) {
     return 0;
 }
 
-Gauge.prototype.drawMajorTick = function(angle, value) {
+Gauge.prototype.drawMajorTick = function(angle, value) {    
     var majorTick = this.paper.rect(-1.5, -7.5, 3, 15);
     this.fill(majorTick, this.darkGrey);
     majorTick.transform("t0,85R"+angle+" 0,0T"+this.gaugeCenter+","+this.gaugeCenter);
@@ -186,11 +189,10 @@ Gauge.prototype.drawScale = function() {
     var span = this.max - this.min;
     var majorInterval = findInterval(span);
     var minorInterval = majorInterval / this.numMinorDivisions;
-
+    console.log( majorInterval );
     var firstValue = findFirstMajorTick(this.min, this.max, majorInterval);
     var angle, deltaAngle = this.angleSpan / span;
     this.deltaAngle = deltaAngle;
-
     var majorValue, minorValue, n;
 
     for (majorValue = firstValue; majorValue <= this.max; majorValue += majorInterval) {	
@@ -234,7 +236,7 @@ Gauge.prototype.drawScale = function() {
 Gauge.prototype.drawAll = function() {
     this.drawBezel();
     this.drawScale();
-    this.drawNeedle(4.5);    
+    this.drawNeedle(0);    
 }
 
 // Main Program Flow
@@ -243,7 +245,13 @@ $(function() {
     $("#gauge0").draggable();
     
     var volts = new Unit("V", "volts");
-    var voltage = new Gauge("Voltage", volts, -1, 10, 5, 0, 8);
+    var voltage = new Gauge("Voltage", volts, 0, .07);
 
     voltage.drawAll();
+    spans = [.01, .1, 1, 2, 3, 4, 5, 10, 12, 25, 50, 79, 100, 104, 156, 304, 1000, 10000];
+    var intval;
+    for (j = 0; j < spans.length; j++) {
+	console.log("span = " + spans[j]);
+	intval = findInterval(spans[j]);
+    }
 });
