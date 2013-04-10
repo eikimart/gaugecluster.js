@@ -3,8 +3,8 @@
   <head>
     <title>Analog Gauge Test</title>
     <link rel="stylesheet" type="text/css" href="gaugecluster.css" media="screen, projection" />
-    <script type="text/javascript" src="jquery-1.8.0.min.js"></script>
-    <script type="text/javascript" src="jquery-ui-1.8.22.custom.min.js"></script>
+    <script type="text/javascript" src="jquery.min.js"></script>
+    <script type="text/javascript" src="jquery-ui.min.js"></script>
     <script type="text/javascript" src="raphael-min.js"></script>
     <script type="text/javascript" src="gaugecluster.js"></script>
     <script>
@@ -12,7 +12,7 @@ $(function() {
     $("#gauge0").draggable();
     
     var volts = new Unit("V", "volts");
-    var voltage = new Gauge("Voltage", volts, 0, .07);
+    var voltage = new Gauge("Voltage", volts, 0, 16);
 
     voltage.drawAll();
 //    spans = [.01, .1, 1, 2, 3, 4, 5, 10, 12, 25, 50, 79, 100, 104, 156, 304, 1000, 10000];
