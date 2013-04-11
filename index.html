@@ -11,8 +11,13 @@
 $(function() {
     $("#gauge0").draggable();
     
-    var volts = new Unit("V", "volts");
-    var voltage = new Gauge("Voltage", volts, 0, 16);
+    var volts = new Unit('V', 'volts');
+    var voltage = new Gauge('gauge0', {
+			name: 'Voltage',
+			unit: volts, 
+			min: 0,
+			max: 16
+		});
 
     voltage.drawAll();
 //    spans = [.01, .1, 1, 2, 3, 4, 5, 10, 12, 25, 50, 79, 100, 104, 156, 304, 1000, 10000];

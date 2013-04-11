@@ -1,3 +1,5 @@
+var GaugeCluster = {};
+
 // Ordinary Functions
 
 /**
@@ -32,14 +34,14 @@ function findInterval(s) {
     return space;
 }
 
-function findFirstMajorTick(min, max, interval) {
-    var i = (max + min) / 2; //start in the center
+function findFirstMajorTick(range, interval) {
+    var i = (range.max + range.min) / 2; //start in the center
     if (i % interval != 0) {
         //now we should be on a major tick
         i = Math.round(i / interval) * interval;
     }
     //and move down until we get to the first major tick
-    while ((i -= interval) >= min) { }
+    while ((i -= interval) >= range.min) { }
     i += interval;
     return i;
 }
@@ -73,6 +75,25 @@ function Point(x, y) {
     this.y = y;
 }
 
+GaugeCluster.range = function (min, max) {
+    if (min > max) {
+        var temp = min;
+        min = max;
+        max = temp;
+    }
+    var range = {
+        min: min,
+        max: max,
+        contains: function (value) {
+            return value >= this.min && value <= this.max;
+        },
+        span: function () {
+            return this.max - this.min;
+        }
+    }
+    return range;
+}
+
 function ClusterWidget() {}
 
 // properties in the prototype, getting around global variables with this
@@ -88,51 +109,50 @@ ClusterWidget.prototype.fill = function(element, color) {
     element.attr("stroke-width", 0);
 }
 
-function Gauge(name, unit, min, max, nom, nomMin, nomMax) {
-    this.name = name;
-    this.unit = unit;    
-    this.min = min;
+var Gauge = function(id, options) {
+    this.name = options.name || "default";
+    this.unit = options.unit;
+    this.id = id;
 
-    if (max > min)
-        this.max = max;
-    else
-        console.log("Maximum value must be greater than minimum value");
+    if (options.hasOwnProperty('min') && options.hasOwnProperty('max')) {
+        this.range = GaugeCluster.range(options.min, options.max);
 
-    if (typeof nom !== 'undefined') {
-        if (nom >= min && nom <= max)
-            this.nominal = nom;
-        else
-            console.log("Nominal value must be in between minimum and maximum values");
-    }
-    if (typeof nomMin !== 'undefined') {
-        if (nomMin >= min && nomMin <= max)
-            this.nominalMin = nomMin;
-        else
-            console.log("Nominal minimum value must be in between minimum and maximum values"); // ERROR
-    }
-    if (typeof nomMax !== 'undefined') {
-        if (nomMax >= min && nomMax <= max) {
-            if (nomMax >= nomMin)
-                this.nominalMax = nomMax;
-            else
-                console.log("Nominal maximum value must be at least as great as the nominal minimum value");
+        if (options.hasOwnProperty('nominal')) {
+            if (this.range.contains(options.nominal)) {
+                console.log("Nominal value must be in between min and max.");
+            }
+            else {
+                this.nominal = options.nominal;
+            }
         }
-        else
-            console.log("Nominal maximum value must be in between minimum and maximum values"); // ERROR
+
+        if (options.hasOwnProperty('nominalMin') && options.hasOwnProperty('nominalMax')) {
+            if (this.range.contains(options.nominalMin) &&
+                this.range.contains(options.nominalMax)) {
+                this.nominalRange = GaugeCluster.range(options.nominalMin, options.nominalMax);
+            }
+        }
     }
+
+    //how many minor ticks in between major ticks?
+    this.numMinorDivisions = options.numMinorDivisions || 5;
+
+    //what angle on the gauge face the scale should subtend, in degrees
+    this.angleSpan = options.angleSpan || 270;
+
+    // size of gauge
+    this.gaugeCenter = options.gaugeCenter || 110;
 
     this.paper = Raphael(
-			document.getElementById("gauge0"),
-			this.gaugeCenter * 2,
-			this.gaugeCenter * 2
-		);
+        document.getElementById(this.id),
+        this.gaugeCenter * 2,
+        this.gaugeCenter * 2
+    );
+    this.prototype = Gauge;
 }
 
 // inherits from general ClusterWidget
 Gauge.prototype = new ClusterWidget();
-Gauge.prototype.numMinorDivisions = 5; //how many minor ticks in between major ticks?
-Gauge.prototype.angleSpan = 270; //what angle on the gauge face the scale should subtend, in degrees
-Gauge.prototype.gaugeCenter = 110; //size of gauge
 
 Gauge.prototype.styleTickText = function(el) {
     this.fill(el, this.darkGrey);
@@ -150,9 +170,9 @@ Gauge.prototype.drawBezel = function() {
 }
 
 Gauge.prototype.drawNeedle = function(value) {
-    if (value > this.max) value = this.max;
-    if (value < this.min) value = this.min;
-    var angle = value2angle(value, this.deltaAngle, this.min);
+    if (value > this.range.max) value = this.range.max;
+    if (value < this.range.min) value = this.range.min;
+    var angle = value2angle(value, this.deltaAngle, this.range.min);
     var needle = this.paper.path("M-9,-1L0,85L9,-1A9.1,9.1,0,0,0,-9,-1");
     this.fill(needle, this.darkGrey);
     needle.transform("r"+angle+" 0,0T"+this.gaugeCenter+","+this.gaugeCenter);
@@ -181,15 +201,15 @@ Gauge.prototype.drawTrack = function(startAngle, stopAngle, color) {
     var warnWidth = 3;
 
     var large = 0;
-    if (Math.abs(stopAngle - startAngle) > 180) {
-    large = 1;
+        if (Math.abs(stopAngle - startAngle) > 180) {
+        large = 1;
     }
 
     start = a2xy(startAngle, warnRadius);
     stop = a2xy(stopAngle, warnRadius);    
 
     var minTrack = this.paper.path("M"+start.x+","+start.y+"A"+warnRadius+","+warnRadius+",0,"+large+",1,"+stop.x+","+stop.y);
-    minTrack.transform("T"+this.gaugeCenter+","+this.gaugeCenter);
+    minTrack.transform("T" + this.gaugeCenter + "," + this.gaugeCenter);
     minTrack.attr("stroke-width", warnWidth);
     minTrack.attr("stroke", color);
 
@@ -200,49 +220,57 @@ Gauge.prototype.drawTrack = function(startAngle, stopAngle, color) {
 // designed. Whole thing can be rotated later, as the nominal-tracking
 // feature does anyway.
 Gauge.prototype.drawScale = function() {
-    var span = this.max - this.min;
-    var majorInterval = findInterval(span);
-    var minorInterval = majorInterval / this.numMinorDivisions;
+    var span = this.range.span(),
+        majorInterval = findInterval(span),
+        minorInterval = majorInterval / this.numMinorDivisions;
+
     console.log( majorInterval );
-    var firstValue = findFirstMajorTick(this.min, this.max, majorInterval);
-    var angle, deltaAngle = this.angleSpan / span;
+    var firstValue = findFirstMajorTick(this.range, majorInterval),
+        angle, 
+        deltaAngle = this.angleSpan / span;
     this.deltaAngle = deltaAngle;
     var majorValue, minorValue, n;
 
-    for (majorValue = firstValue; majorValue <= this.max; majorValue += majorInterval) {    
-    angle = value2angle(majorValue, deltaAngle, this.min);
-    this.drawMajorTick(angle, majorValue);
-    n = 0;
-    for (minorValue = majorValue + minorInterval; minorValue <= this.max; minorValue += minorInterval) {
-        if (++n >= this.numMinorDivisions) {
-        break;
-        }               
-        angle = value2angle(minorValue, deltaAngle, this.min);
-        this.drawMinorTick(angle);
+    for (majorValue = firstValue; majorValue <= this.range.max; majorValue += majorInterval) {    
+        angle = value2angle(majorValue, deltaAngle, this.range.min);
+        this.drawMajorTick(angle, majorValue);
+        n = 0;
+        for (minorValue = majorValue + minorInterval;
+            minorValue <= this.range.max;
+            minorValue += minorInterval) {
+            if (++n >= this.numMinorDivisions) {
+                break;
+            }               
+            angle = value2angle(minorValue, deltaAngle, this.range.min);
+            this.drawMinorTick(angle);
+        }
     }
-    }
-    if (firstValue > this.min) {
-    for (minorValue = firstValue - minorInterval; minorValue >= this.min; minorValue -= minorInterval) {        
-        angle = value2angle(minorValue, deltaAngle, this.min);
-        this.drawMinorTick(angle);      
-    }
+    if (firstValue > this.range.min) {
+        for (minorValue = firstValue - minorInterval;
+                minorValue >= this.range.min;
+                minorValue -= minorInterval) {
+            angle = value2angle(minorValue, deltaAngle, this.range.min);
+            this.drawMinorTick(angle);      
+        }
     }
     var nom = 0;
-    var stopAngle=0, startAngle=270;
-    if ('nominalMin' in this) {
-    if (this.nominalMin < this.max && this.nominalMin > this.min) {
+        stopAngle=0,
+        startAngle=270;
+
+    if (this.hasOwnProperty('nominalRange.min')) {
+        if (this.range.contains(this.nominalRange.min)) {
+            nom = 1;
+            stopAngle = deltaAngle * (this.nominalRange.min - this.range.min);
+            this.drawTrack(0, stopAngle, this.stopRed);
+        }
+    }
+    if (this.hasOwnProperty('nominalRange.max')) {
         nom = 1;
-        stopAngle = deltaAngle * (this.nominalMin - this.min);
-        this.drawTrack(0, stopAngle, this.stopRed);
-    }
-    }
-    if ('nominalMax' in this) {
-    nom = 1;
-    startAngle = deltaAngle * (this.nominalMax - this.min);
-    this.drawTrack(startAngle, 270, this.stopRed);
+        startAngle = deltaAngle * (this.nominalRange.max - this.range.max);
+        this.drawTrack(startAngle, 270, this.stopRed);
     }
     if (nom) {
-    this.drawTrack(stopAngle, startAngle, this.goGreen);
+        this.drawTrack(stopAngle, startAngle, this.goGreen);
     }
     return 0;
 }
@@ -250,6 +278,6 @@ Gauge.prototype.drawScale = function() {
 Gauge.prototype.drawAll = function() {
     this.drawBezel();
     this.drawScale();
-    this.drawNeedle(0);    
+    this.drawNeedle(0);
 }
 
