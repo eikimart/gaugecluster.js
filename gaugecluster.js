@@ -131,6 +131,9 @@ var Gauge = function(id, options) {
                 this.range.contains(options.nominalMax)) {
                 this.nominalRange = GaugeCluster.range(options.nominalMin, options.nominalMax);
             }
+            else {
+                console.log('The nominal range is not contained within the range');
+            }
         }
     }
 

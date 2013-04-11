@@ -2,6 +2,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
     <title>Analog Gauge Test</title>
+		<link href='http://fonts.googleapis.com/css?family=Open+Sans+Condensed:300,700' rel='stylesheet' type='text/css' />
     <link rel="stylesheet" type="text/css" href="gaugecluster.css" media="screen, projection" />
     <script type="text/javascript" src="jquery.min.js"></script>
     <script type="text/javascript" src="jquery-ui.min.js"></script>
@@ -12,19 +13,34 @@ $(function() {
     $("#gauge0").draggable();
     
     var volts = new Unit('V', 'volts');
-    var voltage = new Gauge('gauge0', {
+    var voltageGauge = new Gauge('gauge0', {
 			name: 'Voltage',
 			unit: volts, 
 			min: 0,
 			max: 16
 		});
 
-    voltage.drawAll();
+    voltageGauge.drawAll();
+
+
+		var amps = new Unit('A', 'amps');
+		var amperageGauge = new Gauge('gauge1', {
+			name: 'Amperage',
+			unit: amps,
+			min: 0,
+			max: 32,
+			nominalMin: 22,
+			nominalMax: 28
+		});
+
+		amperageGauge.drawAll();
+
 //    spans = [.01, .1, 1, 2, 3, 4, 5, 10, 12, 25, 50, 79, 100, 104, 156, 304, 1000, 10000];
 });
 </script>
   </head>
   <body>
     <div id="gauge0" style="width:220px; height:220px;" class="ui-widget-content"></div>
+    <div id="gauge1" style="width:220px; height:220px;" class="ui-widget-content"></div>
   </body>
 </html>
