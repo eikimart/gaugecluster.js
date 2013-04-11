@@ -260,16 +260,15 @@ Gauge.prototype.drawScale = function() {
         stopAngle=0,
         startAngle=270;
 
-    if (this.hasOwnProperty('nominalRange.min')) {
+    if (this.hasOwnProperty('nominalRange')) {
         if (this.range.contains(this.nominalRange.min)) {
             nom = 1;
             stopAngle = deltaAngle * (this.nominalRange.min - this.range.min);
             this.drawTrack(0, stopAngle, this.stopRed);
         }
-    }
-    if (this.hasOwnProperty('nominalRange.max')) {
+
         nom = 1;
-        startAngle = deltaAngle * (this.nominalRange.max - this.range.max);
+        startAngle = deltaAngle * (this.nominalRange.max - this.range.min);
         this.drawTrack(startAngle, 270, this.stopRed);
     }
     if (nom) {

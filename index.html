@@ -1,27 +1,29 @@
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
-  <head>
-    <title>Analog Gauge Test</title>
+	<head>
+		<title>Analog Gauge Test</title>
 		<link href='http://fonts.googleapis.com/css?family=Open+Sans+Condensed:300,700' rel='stylesheet' type='text/css' />
-    <link rel="stylesheet" type="text/css" href="gaugecluster.css" media="screen, projection" />
-    <script type="text/javascript" src="jquery.min.js"></script>
-    <script type="text/javascript" src="jquery-ui.min.js"></script>
-    <script type="text/javascript" src="raphael-min.js"></script>
-    <script type="text/javascript" src="gaugecluster.js"></script>
-    <script>
+		<link rel="stylesheet" type="text/css" href="gaugecluster.css" media="screen, projection" />
+		<script type="text/javascript" src="jquery.min.js"></script>
+		<script type="text/javascript" src="jquery-ui.min.js"></script>
+		<script type="text/javascript" src="raphael-min.js"></script>
+		<script type="text/javascript" src="gaugecluster.js"></script>
+		<script>
 $(function() {
-    $("#gauge0").draggable();
-    
-    var volts = new Unit('V', 'volts');
-    var voltageGauge = new Gauge('gauge0', {
+		$("#gauge0").draggable();
+
+		var volts = new Unit('V', 'volts');
+		var voltageGauge = new Gauge('gauge0', {
 			name: 'Voltage',
 			unit: volts, 
 			min: 0,
-			max: 16
+			max: 100,
+			nominal: 48,
+			nominalMin: 36,
+			nominalMax: 72
 		});
 
-    voltageGauge.drawAll();
-
+		voltageGauge.drawAll();
 
 		var amps = new Unit('A', 'amps');
 		var amperageGauge = new Gauge('gauge1', {
@@ -29,18 +31,19 @@ $(function() {
 			unit: amps,
 			min: 0,
 			max: 32,
-			nominalMin: 22,
+			nominal: 15,
+			nominalMin: 2,
 			nominalMax: 28
 		});
 
 		amperageGauge.drawAll();
 
-//    spans = [.01, .1, 1, 2, 3, 4, 5, 10, 12, 25, 50, 79, 100, 104, 156, 304, 1000, 10000];
+//		spans = [.01, .1, 1, 2, 3, 4, 5, 10, 12, 25, 50, 79, 100, 104, 156, 304, 1000, 10000];
 });
 </script>
-  </head>
-  <body>
-    <div id="gauge0" style="width:220px; height:220px;" class="ui-widget-content"></div>
-    <div id="gauge1" style="width:220px; height:220px;" class="ui-widget-content"></div>
-  </body>
+	</head>
+	<body>
+		<div id="gauge0" style="width:220px; height:220px;" class="ui-widget-content"></div>
+		<div id="gauge1" style="width:220px; height:220px;" class="ui-widget-content"></div>
+	</body>
 </html>
